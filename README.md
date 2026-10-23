@@ -16,14 +16,22 @@ depending on msflib.
 
 ```bash
 poetry install                               # create .venv and install dependencies
+cp .env-example .env                         # optional: local settings, git-ignored
 poetry run uvicorn app.main:app --reload     # start the API on http://127.0.0.1:8000
 ```
 
 Then open:
 
 - http://127.0.0.1:8000/health: the health check
+- http://127.0.0.1:8000/api/v1/version: name, version and environment of the running API
 - http://127.0.0.1:8000/docs: interactive API docs (Swagger UI)
 - http://127.0.0.1:8000/redoc: the same docs, read-only
+
+## Configuration
+
+Settings live in `app/core/config.py` and are read from environment variables,
+or from a `.env` file in the project root. `.env-example` lists every setting
+with its default. Versioned endpoints are served under `/api/v1`.
 
 ## Scripts
 
