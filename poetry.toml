@@ -1,0 +1,4 @@
+[virtualenvs]
+# Keep the virtual environment in .venv inside the project, so editors find it
+# and deleting the folder removes everything.
+in-project = true
