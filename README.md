@@ -37,5 +37,6 @@ with its default. Versioned endpoints are served under `/api/v1`.
 
 | Script | What it does |
 | --- | --- |
+| `scripts/test.sh` | Runs the tests with a coverage report. Extra arguments go to pytest, e.g. `-k version` or `-x`. CI runs this. |
 | `scripts/lint.sh` | Lint, format check and type check. CI runs this. |
 | `scripts/format.sh` | Auto-fixes imports, simple lint issues and formatting. |
