@@ -7,7 +7,16 @@ uvicorn imports the `app` object from this module and serves it:
 
 from fastapi import FastAPI
 
-app = FastAPI(title="L'egogi API", version="0.1.0")
+from app.api.api_v1.api import api_router
+from app.core.config import settings
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+)
+
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["health"])
@@ -15,6 +24,7 @@ def health() -> dict[str, str]:
     """Report that the API process is up.
 
     Uptime monitors and the deploy script call this; it must stay cheap and
-    never touch the database.
+    never touch the database. It is deliberately outside /api/v1: it describes
+    the server, not a version of the API.
     """
     return {"status": "ok"}
