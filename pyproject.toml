@@ -18,6 +18,9 @@ package-mode = false
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.8,<1"
 mypy = "^1.13"
+pytest = ">=8.3,<9"
+pytest-cov = ">=6,<8"
+httpx = ">=0.27,<1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -31,3 +34,18 @@ target-version = "py311"
 # E/W: pycodestyle, F: pyflakes, I: import sorting, B: bugbear,
 # UP: modern syntax, N: naming, SIM: simplifications.
 select = ["E", "W", "F", "I", "B", "UP", "N", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+# Fail on a misspelled @pytest.mark instead of silently ignoring it, and list
+# skipped or failed tests in a short summary at the end.
+addopts = "--strict-markers -ra"
+filterwarnings = [
+    # Starlette now prefers `httpx2` for TestClient; `httpx` still works.
+    # Remove this line once we switch the dev dependency to httpx2.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
+[tool.coverage.run]
+# Measure the app, not the tests themselves.
+omit = ["app/tests/*"]
