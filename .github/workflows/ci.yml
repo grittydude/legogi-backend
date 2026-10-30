@@ -1,0 +1,47 @@
+# Runs the same checks you run locally, on a fresh Linux machine, for every
+# pull request and every push to main. A PR can't be merged with a red check.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same PR cancels the run that is still going for the old one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The workflow only reads the code; it can't push or change settings.
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      # Poetry must exist before setup-python so that `cache: poetry` can find
+      # its cache folder. Pinned to the version we use locally.
+      - name: Install Poetry
+        run: pipx install poetry==2.5.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          # Reuses the installed packages between runs while poetry.lock is
+          # unchanged, which saves about a minute per run.
+          cache: poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Lint
+        run: bash scripts/lint.sh
+
+      - name: Test
+        run: bash scripts/test.sh
