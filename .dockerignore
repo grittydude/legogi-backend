@@ -1,0 +1,26 @@
+# Files Docker never sends to the build. Keeps the image small and keeps
+# secrets and local state out of it.
+
+# Git, CI and editors
+.git
+.github
+.idea
+.vscode
+
+# Local Python state
+.venv
+**/__pycache__
+**/*.py[cod]
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage
+htmlcov
+
+# Secrets and local settings: pass these to the container at run time instead
+.env
+
+# Not needed to run the API
+app/tests
+scripts
+*.md
