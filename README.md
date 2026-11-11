@@ -1,5 +1,7 @@
 # legogi-backend
 
+[![CI](https://github.com/grittydude/legogi-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/grittydude/legogi-backend/actions/workflows/ci.yml)
+
 API for the [L'egogi](https://github.com/grittydude/legogi) personal finance app,
 built with FastAPI.
 
