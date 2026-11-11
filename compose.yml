@@ -18,6 +18,15 @@ services:
     env_file:
       - path: .env
         required: false
+    # These override .env: inside Compose the API always uses the `db`
+    # container. Its hostname is its service name, not localhost.
+    environment:
+      USE_SQLITE: "false"
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-legogi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legogi}
+      POSTGRES_DB: ${POSTGRES_DB:-legogi}
     depends_on:
       db:
         condition: service_healthy
@@ -28,7 +37,7 @@ services:
       storage:
         condition: service_healthy
 
-  # Postgres: the main database (used from PR 6).
+  # Postgres: the main database.
   db:
     image: postgres:17-alpine
     environment:

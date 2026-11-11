@@ -71,9 +71,21 @@ jobs:
           echo
           curl --fail --silent --show-error http://127.0.0.1:8000/api/v1/version
           echo
+          # /ready runs SELECT 1, so this proves the API reaches Postgres.
+          curl --fail --silent --show-error http://127.0.0.1:8000/ready
+          echo
 
       - name: Check the API runs as a non-root user
         run: test "$(docker compose exec -T api id -u)" = "1000"
+
+      - name: Check /ready reports 503 when the database is down
+        run: |
+          docker compose stop db
+          code=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8000/ready)
+          echo "GET /ready -> $code"
+          test "$code" = "503"
+          curl --fail --silent --show-error http://127.0.0.1:8000/health
+          echo
 
       - name: Show logs
         if: always()

@@ -11,6 +11,9 @@ htmlcov/
 # Local configuration and secrets
 .env
 
+# Local SQLite database
+*.db
+
 # Editors and OS
 .idea/
 .vscode/
