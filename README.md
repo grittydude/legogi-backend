@@ -24,7 +24,8 @@ poetry run uvicorn app.main:app --reload     # start the API on http://127.0.0.1
 
 Then open:
 
-- http://127.0.0.1:8000/health: the health check
+- http://127.0.0.1:8000/health: the process is up
+- http://127.0.0.1:8000/ready: the database is reachable (503 if not)
 - http://127.0.0.1:8000/api/v1/version: name, version and environment of the running API
 - http://127.0.0.1:8000/docs: interactive API docs (Swagger UI)
 - http://127.0.0.1:8000/redoc: the same docs, read-only
@@ -34,6 +35,10 @@ Then open:
 Settings live in `app/core/config.py` and are read from environment variables,
 or from a `.env` file in the project root. `.env-example` lists every setting
 with its default. Versioned endpoints are served under `/api/v1`.
+
+By default the API uses a SQLite file, `legogi.db` (git-ignored), so no
+database server is needed. Set `USE_SQLITE=false` and the `POSTGRES_*`
+settings to use Postgres; Docker Compose does this for you.
 
 ## Docker (optional)
 

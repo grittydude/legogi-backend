@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import URL
 
 from app.core.config import Settings
 
@@ -70,3 +71,35 @@ def test_unknown_keys_in_env_file_are_ignored(tmp_path: Path) -> None:
     env_file.write_text("POSTGRES_PASSWORD=only-for-docker\n")
 
     Settings(_env_file=env_file)  # must not raise
+
+
+def test_database_defaults_to_a_local_sqlite_file() -> None:
+    s = Settings(_env_file=None)
+
+    assert s.USE_SQLITE is True
+    assert s.database_url == "sqlite:///./legogi.db"
+
+
+def test_database_url_for_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("USE_SQLITE", "false")
+    monkeypatch.setenv("POSTGRES_SERVER", "db")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "p@ss/word")
+
+    url = Settings(_env_file=None).database_url
+
+    assert isinstance(url, URL)
+    assert url.drivername == "postgresql+psycopg"
+    assert url.host == "db"
+    assert url.port == 5432
+    # Special characters are escaped, so they can't break the URL...
+    assert url.render_as_string(hide_password=False).endswith(":p%40ss%2Fword@db:5432/legogi")
+    # ...and printing the URL never shows the password.
+    assert "p@ss" not in str(url)
+    assert "***" in str(url)
+
+
+def test_postgres_port_must_be_a_number(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("POSTGRES_PORT", "five-four-three-two")
+
+    with pytest.raises(ValidationError, match="POSTGRES_PORT"):
+        Settings(_env_file=None)

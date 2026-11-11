@@ -5,9 +5,11 @@
 # receives Docker's stop signal directly.
 set -euo pipefail
 
-# Nothing to prepare yet. Later PRs add, in order:
-#   PR 6: wait until the database accepts connections
-#   PR 8: apply database migrations (alembic upgrade head)
+# 1. Wait until the database accepts connections (up to 60 tries, 1s apart).
+python -m app.backend_pre_start
+
+# 2. Apply database migrations: added in PR 8 (alembic upgrade head).
+
 echo "prestart: ready"
 
 exec "$@"
