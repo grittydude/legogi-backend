@@ -1,0 +1,89 @@
+# The whole backend on one machine: the API plus every service it will use.
+#
+#     docker compose up --build --wait    # build the API image, start everything
+#     docker compose logs -f api          # follow the API's logs
+#     docker compose down                 # stop (add --volumes to wipe data)
+#
+# Values like ${POSTGRES_USER:-legogi} come from .env when it is set there,
+# otherwise from the default after ":-". Every port listens on 127.0.0.1
+# only, so nothing here is reachable from other machines on your network.
+
+name: legogi
+
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+
+  # Postgres: the main database (used from PR 6).
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-legogi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legogi}
+      POSTGRES_DB: ${POSTGRES_DB:-legogi}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # $$ passes a literal $ to the container's shell instead of Compose.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Redis: rate limits, the Celery job queue and caches (from PR 18).
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Mailpit: catches every email the API sends (from PR 19).
+  # Read them at http://127.0.0.1:8025. Nothing reaches a real inbox.
+  # The image has its own health check.
+  mailpit:
+    image: axllent/mailpit:v1.33
+    ports:
+      - "127.0.0.1:8025:8025" # web inbox
+      - "127.0.0.1:1025:1025" # SMTP
+
+  # SeaweedFS: an S3-compatible object store standing in for Cloudflare R2
+  # (from PR 25). One process creates the bucket and the access key.
+  storage:
+    image: chrislusf/seaweedfs:4.53
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-legogi}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-legogi-secret}
+      S3_BUCKET: ${S3_BUCKET:-legogi-backups}
+    ports:
+      - "127.0.0.1:8333:8333" # S3 API
+    volumes:
+      - storage-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8333/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:
+  storage-data:

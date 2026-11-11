@@ -1,5 +1,7 @@
 # Runs the same checks you run locally, on a fresh Linux machine, for every
 # pull request and every push to main. A PR can't be merged with a red check.
+#   lint-and-test: scripts/lint.sh and scripts/test.sh
+#   docker:        builds the image and starts compose.yml
 name: CI
 
 on:
@@ -45,3 +47,38 @@ jobs:
 
       - name: Test
         run: bash scripts/test.sh
+
+  # Builds the API image and starts the whole compose.yml stack, the same way
+  # you would locally with Docker, then calls the API inside its container.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      # --wait returns once every container reports healthy, and fails if one
+      # doesn't within the timeout.
+      - name: Build and start the stack
+        run: docker compose up --build --detach --wait --wait-timeout 180
+
+      - name: Show the containers
+        run: docker compose ps
+
+      - name: Call the API in its container
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:8000/health
+          echo
+          curl --fail --silent --show-error http://127.0.0.1:8000/api/v1/version
+          echo
+
+      - name: Check the API runs as a non-root user
+        run: test "$(docker compose exec -T api id -u)" = "1000"
+
+      - name: Show logs
+        if: always()
+        run: docker compose logs --no-color
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down --volumes
