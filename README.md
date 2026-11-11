@@ -35,6 +35,29 @@ Settings live in `app/core/config.py` and are read from environment variables,
 or from a `.env` file in the project root. `.env-example` lists every setting
 with its default. Versioned endpoints are served under `/api/v1`.
 
+## Docker (optional)
+
+`compose.yml` runs the API with every service it uses: Postgres, Redis,
+Mailpit (catches outgoing email) and SeaweedFS (S3-compatible storage standing
+in for Cloudflare R2). With [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+installed:
+
+```bash
+docker compose up --build --wait     # build the API image and start everything
+docker compose down                  # stop; add --volumes to delete the data
+```
+
+| Service | Address |
+| --- | --- |
+| API | http://127.0.0.1:8000 |
+| Postgres | `127.0.0.1:5432` |
+| Redis | `127.0.0.1:6379` |
+| Mailpit inbox | http://127.0.0.1:8025 |
+| S3 storage | http://127.0.0.1:8333 |
+
+Docker isn't required for development: the `poetry run uvicorn` steps above
+are enough. CI builds the image and starts this stack on every pull request.
+
 ## Scripts
 
 | Script | What it does |
